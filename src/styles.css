@@ -64,10 +64,8 @@ img {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
-  gap: 24px;
   width: min(1180px, calc(100% - 32px));
   min-height: 72px;
   margin: 0 auto;
@@ -94,43 +92,6 @@ img {
   background: var(--charcoal);
   border-radius: var(--radius);
   box-shadow: 0 10px 28px rgba(34, 40, 38, 0.22);
-}
-
-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-
-nav a {
-  min-width: 84px;
-  padding: 9px 12px;
-  color: var(--muted);
-  text-align: center;
-  border-radius: 6px;
-}
-
-nav a:hover,
-nav a:focus-visible {
-  color: var(--ink);
-  background: #f0f1ec;
-}
-
-.header-action {
-  justify-self: end;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 42px;
-  padding: 0 16px;
-  color: var(--white);
-  background: var(--charcoal);
-  border-radius: var(--radius);
 }
 
 .hero {
@@ -376,6 +337,7 @@ h2 {
 
 .upload-zone,
 .config-panel {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.78);
@@ -383,11 +345,10 @@ h2 {
 }
 
 .upload-zone {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.92fr) minmax(260px, 1fr);
-  gap: 20px;
-  align-items: center;
-  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 560px;
   padding: clamp(18px, 3vw, 32px);
   border-style: dashed;
 }
@@ -402,7 +363,9 @@ h2 {
   overflow: hidden;
   display: grid;
   width: 100%;
-  aspect-ratio: 4 / 5;
+  flex: 1;
+  min-height: 420px;
+  aspect-ratio: 5 / 4;
   place-items: center;
   background: #f1f2ed;
   border-radius: var(--radius);
@@ -440,6 +403,17 @@ h2 {
   font-size: 1.38rem;
   line-height: 1.16;
   letter-spacing: 0;
+}
+
+.upload-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.upload-copy p {
+  margin-bottom: 0;
 }
 
 .upload-copy p,
@@ -646,14 +620,6 @@ footer {
 }
 
 @media (max-width: 940px) {
-  .site-header {
-    grid-template-columns: 1fr auto;
-  }
-
-  nav {
-    display: none;
-  }
-
   .hero,
   .studio-grid {
     grid-template-columns: 1fr;
@@ -682,10 +648,6 @@ footer {
     width: min(100% - 24px, 1180px);
   }
 
-  .header-action {
-    padding: 0 12px;
-  }
-
   .hero {
     padding-bottom: 54px;
   }
@@ -705,7 +667,16 @@ footer {
   }
 
   .upload-zone {
-    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .upload-preview {
+    min-height: 360px;
+  }
+
+  .upload-copy {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .section-heading {

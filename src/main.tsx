@@ -1,13 +1,12 @@
 import React, { ChangeEvent, DragEvent, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  ArrowUp,
   Check,
-  ChevronRight,
   ImagePlus,
   LampDesk,
   Minus,
   Plus,
-  RotateCcw,
   ShieldCheck,
   Sparkles,
   Upload,
@@ -20,10 +19,16 @@ type LampSize = "Mini" | "Classic" | "Gallery";
 type LightTone = "Warm" | "Soft white" | "Amber";
 
 const sizes: Array<{ label: LampSize; price: number; detail: string }> = [
-  { label: "Mini", price: 39, detail: "4 in" },
-  { label: "Classic", price: 59, detail: "6 in" },
-  { label: "Gallery", price: 84, detail: "8 in" },
+  { label: "Mini", price: 199, detail: "10 cm" },
+  { label: "Classic", price: 299, detail: "15 cm" },
+  { label: "Gallery", price: 429, detail: "20 cm" },
 ];
+
+const currencyFormatter = new Intl.NumberFormat("ro-RO", {
+  style: "currency",
+  currency: "RON",
+  maximumFractionDigits: 0,
+});
 
 const lightTones: Array<{ label: LightTone; color: string }> = [
   { label: "Warm", color: "#ffd082" },
@@ -64,6 +69,7 @@ function App() {
   const selectedSize = sizes.find((item) => item.label === size) ?? sizes[1];
   const selectedTone = lightTones.find((item) => item.label === tone) ?? lightTones[0];
   const subtotal = useMemo(() => selectedSize.price * quantity, [quantity, selectedSize.price]);
+  const formattedSubtotal = currencyFormatter.format(subtotal);
 
   function readFile(file?: File) {
     if (!file || !file.type.startsWith("image/")) return;
@@ -94,15 +100,6 @@ function App() {
             <LampDesk size={19} aria-hidden="true" />
           </span>
           <span>LumaRelief</span>
-        </a>
-        <nav aria-label="Primary navigation">
-          <a href="#upload">Upload</a>
-          <a href="#design">Design</a>
-          <a href="#gallery">Gallery</a>
-        </nav>
-        <a className="header-action" href="#upload">
-          Start
-          <ChevronRight size={16} aria-hidden="true" />
         </a>
       </header>
 
@@ -208,8 +205,10 @@ function App() {
             </div>
 
             <div className="upload-copy">
-              <h3>{uploadedImage ? "Photo ready" : "Upload photo"}</h3>
-              <p>{fileName || "JPG, PNG, HEIC"}</p>
+              <div>
+                <h3>{uploadedImage ? "Photo ready" : "Upload photo"}</h3>
+                <p>{fileName || "JPG, PNG, HEIC"}</p>
+              </div>
               <button className="secondary-button" type="button" onClick={() => inputRef.current?.click()}>
                 <ImagePlus size={17} aria-hidden="true" />
                 Choose file
@@ -287,7 +286,7 @@ function App() {
             <div className="summary-card">
               <div>
                 <span>{size} lamp</span>
-                <strong>${subtotal}</strong>
+                <strong>{formattedSubtotal}</strong>
               </div>
               <p>{tone} LED, matte black case, printed proof included.</p>
             </div>
@@ -329,8 +328,8 @@ function App() {
           <span>LumaRelief</span>
         </a>
         <button className="ghost-button" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <RotateCcw size={17} aria-hidden="true" />
-          Reset view
+          <ArrowUp size={17} aria-hidden="true" />
+          Back to top
         </button>
       </footer>
     </main>
