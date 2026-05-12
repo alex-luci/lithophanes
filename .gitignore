@@ -1,5 +1,10 @@
 node_modules/
 dist/
+generated/
+.pytest_cache/
+__pycache__/
+*.pyc
+.venv/
 .DS_Store
 .env
 .env.*
