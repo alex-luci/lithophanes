@@ -92,7 +92,7 @@ def _image_to_heightmap(image: Image.Image, max_dimension_mm: float) -> tuple[np
     resized_height = max(2, int(round(height_px * scale)))
     resized = image.resize((resized_width, resized_height), Image.Resampling.LANCZOS)
 
-    pixels = np.asarray(resized, dtype=np.float32) / 255.0
+    pixels = np.flipud(np.asarray(resized, dtype=np.float32) / 255.0)
     low = float(pixels.min())
     high = float(pixels.max())
     if high > low:
