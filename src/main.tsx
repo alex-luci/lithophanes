@@ -303,7 +303,7 @@ function App() {
 
             <div className="upload-preview">
               {job?.status === "complete" && job.glbUrl ? (
-                <LithophaneViewer glbUrl={job.glbUrl} lightColor={selectedTone.color} />
+                <LithophaneViewer glbUrl={job.glbUrl} imageUrl={uploadedImage} lightColor={selectedTone.color} />
               ) : uploadedImage ? (
                 <>
                   <img src={uploadedImage} alt="Uploaded preview" />
