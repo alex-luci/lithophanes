@@ -39,7 +39,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
     if (!mount) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#252723");
+    scene.background = new THREE.Color("#d8d2c4");
 
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 10000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -200,7 +200,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
         const caseCenter = caseBox.getCenter(new THREE.Vector3());
         caseMesh.position.x -= caseCenter.x;
         caseMesh.position.y -= caseCenter.y;
-        const frontLipZ = boxSize.z / 2 + 0.55;
+        const frontLipZ = boxSize.z / 2 - 0.75;
         caseMesh.position.z = frontLipZ - caseBox.max.z;
         caseMesh.renderOrder = -2;
         modelRoot.add(caseMesh);
