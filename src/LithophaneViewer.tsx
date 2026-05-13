@@ -202,7 +202,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
         const caseCenter = caseBox.getCenter(new THREE.Vector3());
         caseMesh.position.x -= caseCenter.x;
         caseMesh.position.y -= caseCenter.y;
-        const frontLipZ = lightPanelBackZ - 0.55;
+        const frontLipZ = lightPanelBackZ + 25;
         caseMesh.position.z = frontLipZ - caseBox.max.z;
         caseMesh.renderOrder = -2;
         modelRoot.add(caseMesh);
