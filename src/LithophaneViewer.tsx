@@ -4,16 +4,19 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
 type LithophaneViewerProps = {
   glbUrl: string;
   imageUrl: string | null;
   lightColor: string;
+  size: "Small" | "Medium" | "Large";
+  orientation: "Portrait" | "Landscape" | "Square";
 };
 
 const DEFAULT_ROTATION = { x: -0.08, y: -0.18 };
 
-export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneViewerProps) {
+export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientation }: LithophaneViewerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const modelRef = useRef<THREE.Group | null>(null);
   const materialsRef = useRef<THREE.ShaderMaterial[]>([]);
@@ -51,6 +54,11 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
     const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.34, 0.76, 0.56);
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
+
+    scene.add(new THREE.HemisphereLight("#fff0d0", "#121412", 1.15));
+    const keyLight = new THREE.DirectionalLight("#fff8e8", 1.7);
+    keyLight.position.set(0.35, 0.55, 1.2);
+    scene.add(keyLight);
 
     const modelRoot = new THREE.Group();
     modelRoot.rotation.set(DEFAULT_ROTATION.x, DEFAULT_ROTATION.y, 0);
@@ -115,6 +123,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
     resize();
 
     const loader = new GLTFLoader();
+    const stlLoader = new STLLoader();
     loader.load(glbUrl, (gltf) => {
       if (disposed) return;
       materialsRef.current = [];
@@ -135,31 +144,67 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
 
       const box = new THREE.Box3().setFromObject(gltf.scene);
       const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
+      const boxSize = box.getSize(new THREE.Vector3());
       gltf.scene.position.sub(center);
 
-      const maxDim = Math.max(size.x, size.y, size.z);
+      const maxDim = Math.max(boxSize.x, boxSize.y, boxSize.z);
       camera.position.set(0, 0, maxDim * 2.18);
       camera.near = Math.max(0.1, maxDim / 100);
       camera.far = maxDim * 12;
       camera.lookAt(0, 0, 0);
       camera.updateProjectionMatrix();
 
+      const lithophaneBackZ = -boxSize.z / 2;
+      const lightPanelDepth = Math.min(1.8, Math.max(0.7, maxDim * 0.01));
       const backlightMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(lightColorRef.current),
-        opacity: 0.5,
+        opacity: 0,
         transparent: true,
         side: THREE.DoubleSide,
         toneMapped: false,
+        depthWrite: false,
       });
       const backlight = new THREE.Mesh(
-        new THREE.PlaneGeometry(size.x * 1.08, size.y * 1.08),
+        new THREE.BoxGeometry(boxSize.x * 0.94, boxSize.y * 0.94, lightPanelDepth),
         backlightMaterial,
       );
-      backlight.position.set(0, 0, -Math.max(6, size.z + maxDim * 0.025));
+      backlight.position.set(0, 0, lithophaneBackZ - lightPanelDepth / 2 - 0.45);
       backlight.renderOrder = -1;
       modelRoot.add(backlight);
       backlightRef.current = backlightMaterial;
+
+      const caseMaterial = new THREE.MeshStandardMaterial({
+        color: "#151715",
+        roughness: 0.82,
+        metalness: 0.18,
+        side: THREE.DoubleSide,
+      });
+
+      stlLoader.load(getCaseUrl(size, orientation), (geometry) => {
+        if (disposed) {
+          geometry.dispose();
+          caseMaterial.dispose();
+          return;
+        }
+
+        geometry.computeVertexNormals();
+        geometry.computeBoundingBox();
+
+        const caseMesh = new THREE.Mesh(geometry, caseMaterial);
+        caseMesh.name = "case-cover";
+        if (orientation === "Portrait") {
+          caseMesh.rotation.z = Math.PI / 2;
+        }
+
+        const caseBox = new THREE.Box3().setFromObject(caseMesh);
+        const caseCenter = caseBox.getCenter(new THREE.Vector3());
+        caseMesh.position.x -= caseCenter.x;
+        caseMesh.position.y -= caseCenter.y;
+        const frontLipZ = boxSize.z / 2 + 0.55;
+        caseMesh.position.z = frontLipZ - caseBox.max.z;
+        caseMesh.renderOrder = -2;
+        modelRoot.add(caseMesh);
+      });
     });
 
     function animate() {
@@ -186,7 +231,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
       materialsRef.current = [];
       backlightRef.current = null;
     };
-  }, [glbUrl, imageUrl]);
+  }, [glbUrl, imageUrl, size, orientation]);
 
   return (
     <div className="model-viewer-wrap">
@@ -194,6 +239,12 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
       <div className="model-viewer" ref={mountRef} aria-label="Generated lithophane 3D preview" />
     </div>
   );
+}
+
+function getCaseUrl(size: LithophaneViewerProps["size"], orientation: LithophaneViewerProps["orientation"]) {
+  const slug = size.toLowerCase();
+  if (orientation === "Square") return `/square_${slug}.stl`;
+  return `/landscape_portrait_${slug}.stl`;
 }
 
 function createLithophaneMaterial(
