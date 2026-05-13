@@ -43,12 +43,12 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.22;
+    renderer.toneMappingExposure = 0.98;
     mount.appendChild(renderer.domElement);
 
     const composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.34, 0.76, 0.56);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.2, 0.82, 0.7);
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
 
@@ -147,7 +147,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
 
       const backlightMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(lightColorRef.current),
-        opacity: 0.5,
+        opacity: 0.46,
         transparent: true,
         side: THREE.DoubleSide,
         toneMapped: false,
@@ -239,24 +239,26 @@ function createLithophaneMaterial(
         float thickness = clamp((vThickness - uMinThickness) / max(0.001, uMaxThickness - uMinThickness), 0.0, 1.0);
         float thinness = 1.0 - thickness;
 
-        float mapTransmission = smoothstep(0.05, 0.98, photoLum);
+        float compressedLum = clamp(0.18 + photoLum * 0.68, 0.0, 1.0);
+        float mapTransmission = smoothstep(0.05, 0.95, compressedLum);
         float depthTransmission = smoothstep(0.02, 0.95, thinness);
-        float transmission = clamp(pow(mapTransmission * 0.62 + depthTransmission * 0.28, 1.22), 0.0, 1.0);
-        float blocked = smoothstep(0.45, 1.0, thickness) * (1.0 - photoLum);
+        float transmission = clamp(0.24 + mapTransmission * 0.42 + depthTransmission * 0.16, 0.24, 0.82);
+        float blocked = smoothstep(0.58, 1.0, thickness) * (1.0 - compressedLum) * 0.34;
 
         float frontFacing = pow(clamp(dot(normalize(vWorldNormal), vec3(0.0, 0.0, 1.0)) * 0.5 + 0.5, 0.0, 1.0), 0.65);
-        float innerGlow = transmission * (0.52 + frontFacing * 0.44);
-        float raisedRelief = 1.0 - thickness * 0.32;
+        float innerGlow = transmission * (0.44 + frontFacing * 0.32);
+        float raisedRelief = 0.92 - thickness * 0.18;
 
-        vec3 resinShadow = vec3(0.15, 0.13, 0.10);
-        vec3 warmResin = vec3(0.82, 0.73, 0.56);
-        vec3 lampLight = uLightColor * (0.42 + innerGlow * 1.18);
+        vec3 resinShadow = vec3(0.42, 0.31, 0.19);
+        vec3 warmResin = vec3(0.88, 0.70, 0.43);
+        vec3 lampLight = uLightColor * (0.26 + innerGlow * 0.72);
 
-        vec3 color = mix(resinShadow, warmResin, photoLum * 0.35 + thinness * 0.18);
+        vec3 color = mix(resinShadow, warmResin, compressedLum * 0.48 + thinness * 0.14);
         color += lampLight * innerGlow;
         color *= raisedRelief;
-        color = mix(color, resinShadow, blocked * 0.72);
-        color += pow(innerGlow, 4.0) * uLightColor * 1.15;
+        color = mix(color, resinShadow, blocked);
+        color += pow(innerGlow, 4.0) * uLightColor * 0.42;
+        color = min(color, vec3(1.18, 1.02, 0.78));
 
         gl_FragColor = vec4(color, 1.0);
       }
