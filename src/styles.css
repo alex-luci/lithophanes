@@ -503,9 +503,9 @@ h2 {
 
 .model-glow {
   position: absolute;
-  inset: 10%;
-  opacity: 0.36;
-  filter: blur(44px);
+  inset: 22%;
+  opacity: 0;
+  filter: blur(28px);
 }
 
 .model-viewer {

@@ -42,16 +42,17 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
     scene.background = new THREE.Color("#d8d2c4");
 
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 10000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor("#d8d2c4", 1);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.22;
+    renderer.toneMappingExposure = 0.92;
     mount.appendChild(renderer.domElement);
 
     const composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.34, 0.76, 0.56);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.16, 0.34, 0.72);
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
 
@@ -156,6 +157,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
 
       const lithophaneBackZ = -boxSize.z / 2;
       const lightPanelDepth = Math.min(1.8, Math.max(0.7, maxDim * 0.01));
+      const lightPanelBackZ = lithophaneBackZ - lightPanelDepth - 0.45;
       const backlightMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(lightColorRef.current),
         opacity: 0,
@@ -200,7 +202,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
         const caseCenter = caseBox.getCenter(new THREE.Vector3());
         caseMesh.position.x -= caseCenter.x;
         caseMesh.position.y -= caseCenter.y;
-        const frontLipZ = boxSize.z / 2 - 0.75;
+        const frontLipZ = lightPanelBackZ - 0.55;
         caseMesh.position.z = frontLipZ - caseBox.max.z;
         caseMesh.renderOrder = -2;
         modelRoot.add(caseMesh);
