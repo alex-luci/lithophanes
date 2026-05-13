@@ -2,7 +2,10 @@ import React, { ChangeEvent, DragEvent, useMemo, useRef, useState } from "react"
 import { createRoot } from "react-dom/client";
 import {
   ArrowUp,
+  BadgeCheck,
   Check,
+  ClipboardList,
+  Gift,
   ImagePlus,
   LampDesk,
   Minus,
@@ -85,6 +88,29 @@ const gallery = [
     color: "#f1b34b",
     image:
       "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=900&q=80",
+  },
+];
+
+const storyCards = [
+  {
+    title: "How it works?",
+    icon: ClipboardList,
+    color: "#2d9c91",
+    steps: ["Upload photo", "Select configuration", "You receive it"],
+  },
+  {
+    title: "Why choose a lithophane?",
+    icon: Gift,
+    color: "#ef7d60",
+    copy:
+      "It turns a favorite memory into an emotional gift: personal, warm, and made to be seen every evening.",
+  },
+  {
+    title: "Premium quality",
+    icon: BadgeCheck,
+    color: "#f1b34b",
+    copy:
+      "We check every photo before printing, tune the relief for clean detail, and finish each lamp with a fitted light base.",
   },
 ];
 
@@ -383,6 +409,37 @@ function App() {
             </div>
           </div>
           <div className="lamp-shadow" />
+        </div>
+      </section>
+
+      <section className="story-section" aria-labelledby="story-title">
+        <div className="section-heading">
+          <p className="eyebrow">Your memory, made luminous</p>
+          <h2 id="story-title">Because every photo tells a story, let us help you tell yours</h2>
+        </div>
+
+        <div className="story-grid">
+          {storyCards.map((card) => {
+            const Icon = card.icon;
+
+            return (
+              <article className="story-card" key={card.title}>
+                <div className="story-icon" style={{ background: card.color }}>
+                  <Icon size={22} aria-hidden="true" />
+                </div>
+                <h3>{card.title}</h3>
+                {"steps" in card ? (
+                  <ol>
+                    {card.steps.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p>{card.copy}</p>
+                )}
+              </article>
+            );
+          })}
         </div>
       </section>
 
