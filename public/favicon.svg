@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="LumaRelief">
+  <rect width="64" height="64" rx="14" fill="#222826" />
+  <circle cx="42" cy="42" r="8" fill="#f1b34b" opacity="0.28" />
+  <path
+    d="M22 17h20l3 22H19l3-22Zm4 6-1.4 10h14.8L38 23H26Zm1.8 24h8.4M32 39v8"
+    fill="none"
+    stroke="#fbfaf7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="4"
+  />
+  <path d="M39 37c3 1 5 3 6 6" fill="none" stroke="#f1b34b" stroke-linecap="round" stroke-width="4" />
+</svg>
