@@ -11,7 +11,7 @@ type LithophaneViewerProps = {
   lightColor: string;
 };
 
-const DEFAULT_ROTATION = { x: -0.08, y: -0.18 };
+const DEFAULT_ROTATION = { x: -0.03, y: -0.06 };
 
 export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneViewerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -43,12 +43,12 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.98;
+    renderer.toneMappingExposure = 0.92;
     mount.appendChild(renderer.domElement);
 
     const composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.2, 0.82, 0.7);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.16, 0.72, 0.78);
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
 
@@ -147,16 +147,18 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor }: LithophaneVie
 
       const backlightMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(lightColorRef.current),
-        opacity: 0.46,
+        opacity: 0.18,
         transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
         side: THREE.DoubleSide,
         toneMapped: false,
       });
       const backlight = new THREE.Mesh(
-        new THREE.PlaneGeometry(size.x * 1.08, size.y * 1.08),
+        new THREE.PlaneGeometry(size.x * 0.94, size.y * 0.94),
         backlightMaterial,
       );
-      backlight.position.set(0, 0, -Math.max(6, size.z + maxDim * 0.025));
+      backlight.position.set(0, 0, -Math.max(4, size.z + maxDim * 0.018));
       backlight.renderOrder = -1;
       modelRoot.add(backlight);
       backlightRef.current = backlightMaterial;
@@ -239,26 +241,30 @@ function createLithophaneMaterial(
         float thickness = clamp((vThickness - uMinThickness) / max(0.001, uMaxThickness - uMinThickness), 0.0, 1.0);
         float thinness = 1.0 - thickness;
 
-        float compressedLum = clamp(0.18 + photoLum * 0.68, 0.0, 1.0);
-        float mapTransmission = smoothstep(0.05, 0.95, compressedLum);
+        float detailLum = pow(clamp((photoLum - 0.04) * 1.18, 0.0, 1.0), 0.86);
+        float compressedLum = clamp(0.12 + detailLum * 0.74, 0.0, 1.0);
+        float mapTransmission = smoothstep(0.03, 0.95, compressedLum);
         float depthTransmission = smoothstep(0.02, 0.95, thinness);
-        float transmission = clamp(0.24 + mapTransmission * 0.42 + depthTransmission * 0.16, 0.24, 0.82);
-        float blocked = smoothstep(0.58, 1.0, thickness) * (1.0 - compressedLum) * 0.34;
+        float transmission = clamp(0.24 + mapTransmission * 0.38 + depthTransmission * 0.15, 0.24, 0.78);
+        float imageDensity = pow(1.0 - detailLum, 1.08);
+        float blocked = smoothstep(0.48, 1.0, thickness) * imageDensity * 0.32;
 
         float frontFacing = pow(clamp(dot(normalize(vWorldNormal), vec3(0.0, 0.0, 1.0)) * 0.5 + 0.5, 0.0, 1.0), 0.65);
-        float innerGlow = transmission * (0.44 + frontFacing * 0.32);
-        float raisedRelief = 0.92 - thickness * 0.18;
+        float innerGlow = transmission * (0.42 + frontFacing * 0.3);
+        float raisedRelief = 0.94 - thickness * 0.18;
 
-        vec3 resinShadow = vec3(0.42, 0.31, 0.19);
-        vec3 warmResin = vec3(0.88, 0.70, 0.43);
-        vec3 lampLight = uLightColor * (0.26 + innerGlow * 0.72);
+        vec3 resinShadow = vec3(0.48, 0.36, 0.22);
+        vec3 warmResin = vec3(0.92, 0.76, 0.5);
+        vec3 lampLight = uLightColor * (0.26 + innerGlow * 0.66);
+        vec3 sepiaInk = vec3(0.3, 0.21, 0.12) * imageDensity;
 
-        vec3 color = mix(resinShadow, warmResin, compressedLum * 0.48 + thinness * 0.14);
+        vec3 color = mix(resinShadow, warmResin, compressedLum * 0.42 + thinness * 0.12);
         color += lampLight * innerGlow;
         color *= raisedRelief;
         color = mix(color, resinShadow, blocked);
-        color += pow(innerGlow, 4.0) * uLightColor * 0.42;
-        color = min(color, vec3(1.18, 1.02, 0.78));
+        color -= sepiaInk * (0.34 + thickness * 0.18);
+        color += pow(innerGlow, 4.0) * uLightColor * 0.24;
+        color = clamp(color, vec3(0.28, 0.2, 0.12), vec3(1.0, 0.86, 0.64));
 
         gl_FragColor = vec4(color, 1.0);
       }
