@@ -13,29 +13,10 @@ import {
   Wand2,
   X,
 } from "lucide-react";
-import { LithophaneViewer } from "./LithophaneViewer";
 import "./styles.css";
 
 type LampSize = "Mini" | "Classic" | "Gallery";
 type LightTone = "Warm" | "Soft white" | "Amber";
-type JobStatus = "idle" | "ready" | "uploading" | "queued" | "processing" | "complete" | "failed";
-
-type LithophaneJob = {
-  jobId: string;
-  status: Exclude<JobStatus, "idle" | "ready" | "uploading">;
-  stlUrl?: string;
-  glbUrl?: string;
-  error?: string;
-  metadata?: {
-    width_mm: number;
-    height_mm: number;
-    min_thickness_mm: number;
-    max_thickness_mm: number;
-    vertices: number;
-    faces: number;
-    is_watertight: boolean;
-  };
-};
 
 const sizes: Array<{ label: LampSize; price: number; detail: string }> = [
   { label: "Mini", price: 199, detail: "10 cm" },
@@ -78,15 +59,11 @@ const gallery = [
 
 function App() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
   const [size, setSize] = useState<LampSize>("Classic");
   const [tone, setTone] = useState<LightTone>("Warm");
   const [quantity, setQuantity] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
-  const [job, setJob] = useState<LithophaneJob | null>(null);
-  const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
-  const [jobError, setJobError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const selectedSize = sizes.find((item) => item.label === size) ?? sizes[1];
@@ -95,22 +72,12 @@ function App() {
   const formattedSubtotal = currencyFormatter.format(subtotal);
 
   function readFile(file?: File) {
-    if (!file) return;
-
-    if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setJobError("Only JPG and PNG photos are supported.");
-      setJobStatus("failed");
-      return;
-    }
+    if (!file || !file.type.startsWith("image/")) return;
 
     const reader = new FileReader();
     reader.onload = () => {
-      setSelectedFile(file);
       setUploadedImage(String(reader.result));
       setFileName(file.name);
-      setJob(null);
-      setJobError("");
-      setJobStatus("ready");
     };
     reader.readAsDataURL(file);
   }
@@ -124,94 +91,6 @@ function App() {
     setIsDragging(false);
     readFile(event.dataTransfer.files?.[0]);
   }
-
-  async function createPreview() {
-    if (!selectedFile) {
-      setJobError("Choose a JPG or PNG photo first.");
-      setJobStatus("failed");
-      return;
-    }
-
-    setJobError("");
-    setJob(null);
-    setJobStatus("uploading");
-
-    try {
-      const formData = new FormData();
-      formData.append("image", selectedFile);
-      formData.append("size", size);
-
-      const response = await fetch("/api/lithophanes", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorPayload = await response.json().catch(() => null);
-        throw new Error(errorPayload?.detail ?? "Could not start lithophane generation.");
-      }
-
-      const queuedJob = (await response.json()) as LithophaneJob;
-      setJob(queuedJob);
-      setJobStatus(queuedJob.status);
-      void pollJob(queuedJob.jobId);
-    } catch (error) {
-      setJobError(error instanceof Error ? error.message : "Could not create preview.");
-      setJobStatus("failed");
-    }
-  }
-
-  async function pollJob(jobId: string) {
-    try {
-      for (let attempt = 0; attempt < 90; attempt += 1) {
-        await new Promise((resolve) => window.setTimeout(resolve, 900));
-        const response = await fetch(`/api/lithophanes/${jobId}`);
-        if (!response.ok) throw new Error("Could not read preview status.");
-
-        const nextJob = (await response.json()) as LithophaneJob;
-        setJob(nextJob);
-        setJobStatus(nextJob.status);
-
-        if (nextJob.status === "complete") return;
-        if (nextJob.status === "failed") {
-          setJobError(nextJob.error ?? "Lithophane generation failed.");
-          return;
-        }
-      }
-
-      setJobStatus("failed");
-      setJobError("Generation timed out. Try a smaller photo.");
-    } catch (error) {
-      setJobStatus("failed");
-      setJobError(error instanceof Error ? error.message : "Could not read preview status.");
-    }
-  }
-
-  function resetPhoto() {
-    setSelectedFile(null);
-    setUploadedImage(null);
-    setFileName("");
-    setJob(null);
-    setJobError("");
-    setJobStatus("idle");
-    if (inputRef.current) inputRef.current.value = "";
-  }
-
-  const canCreatePreview = Boolean(selectedFile) && !["uploading", "queued", "processing"].includes(jobStatus);
-  const statusLabel =
-    jobStatus === "uploading"
-      ? "Uploading photo"
-      : jobStatus === "queued"
-        ? "Queued"
-        : jobStatus === "processing"
-          ? "Generating STL and GLB"
-          : jobStatus === "complete"
-            ? "3D preview ready"
-            : jobStatus === "failed"
-              ? "Preview failed"
-              : selectedFile
-                ? "Ready to generate"
-                : "Choose a JPG or PNG photo";
 
   return (
     <main className="app-shell">
@@ -297,20 +176,22 @@ function App() {
               className="sr-only"
               id="photo-upload"
               type="file"
-              accept="image/jpeg,image/png"
+              accept="image/*"
               onChange={handleFileChange}
             />
 
             <div className="upload-preview">
-              {job?.status === "complete" && job.glbUrl ? (
-                <LithophaneViewer glbUrl={job.glbUrl} imageUrl={uploadedImage} lightColor={selectedTone.color} />
-              ) : uploadedImage ? (
+              {uploadedImage ? (
                 <>
                   <img src={uploadedImage} alt="Uploaded preview" />
                   <button
                     className="icon-button remove-photo"
                     type="button"
-                    onClick={resetPhoto}
+                    onClick={() => {
+                      setUploadedImage(null);
+                      setFileName("");
+                      if (inputRef.current) inputRef.current.value = "";
+                    }}
                     aria-label="Remove photo"
                   >
                     <X size={18} aria-hidden="true" />
@@ -321,25 +202,18 @@ function App() {
                   <Upload size={38} />
                 </div>
               )}
-              {["uploading", "queued", "processing"].includes(jobStatus) ? (
-                <div className="preview-status" role="status">
-                  <span />
-                  {statusLabel}
-                </div>
-              ) : null}
             </div>
 
             <div className="upload-copy">
               <div>
-                <h3>{statusLabel}</h3>
-                <p>{fileName || "JPG or PNG"}</p>
+                <h3>{uploadedImage ? "Photo ready" : "Upload photo"}</h3>
+                <p>{fileName || "JPG, PNG, HEIC"}</p>
               </div>
               <button className="secondary-button" type="button" onClick={() => inputRef.current?.click()}>
                 <ImagePlus size={17} aria-hidden="true" />
                 Choose file
               </button>
             </div>
-            {jobError ? <p className="error-text">{jobError}</p> : null}
           </div>
 
           <aside className="config-panel" id="design" aria-label="Lamp options">
@@ -414,24 +288,13 @@ function App() {
                 <span>{size} lamp</span>
                 <strong>{formattedSubtotal}</strong>
               </div>
-              <p>
-                {tone} LED, matte black case
-                {job?.metadata
-                  ? `, ${job.metadata.width_mm} x ${job.metadata.height_mm} mm lithophane`
-                  : ", printed proof included"}
-                .
-              </p>
+              <p>{tone} LED, matte black case, printed proof included.</p>
             </div>
 
-            <button className="primary-button wide" type="button" disabled={!canCreatePreview} onClick={createPreview}>
+            <button className="primary-button wide" type="button">
               <Wand2 size={18} aria-hidden="true" />
-              {["uploading", "queued", "processing"].includes(jobStatus) ? "Creating preview" : "Create preview"}
+              Create preview
             </button>
-            {job?.status === "complete" && job.stlUrl ? (
-              <a className="download-link" href={job.stlUrl} download>
-                Download STL
-              </a>
-            ) : null}
           </aside>
         </div>
       </section>

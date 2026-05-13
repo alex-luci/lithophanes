@@ -1,1 +1,0 @@
-"""Lithophane backend package."""
