@@ -32,7 +32,19 @@ def test_create_lithophane_outputs_watertight_files(tmp_path: Path, name: str, s
     assert mesh.is_watertight
     assert mesh.bounds[0][2] >= 0
     assert mesh.bounds[1][2] <= MAX_THICKNESS_MM + 0.01
-    assert pytest.approx(max(mesh.extents[0], mesh.extents[1]), abs=0.25) == 150.0
+    assert pytest.approx(mesh.extents[0], abs=0.25) == 150.0
+    assert pytest.approx(mesh.extents[1], abs=0.25) == 150.0
+
+
+@pytest.mark.parametrize(("size", "expected_mm"), [("Mini", 100.0), ("Classic", 150.0), ("Gallery", 200.0)])
+def test_selected_size_controls_square_dimensions(tmp_path: Path, size: str, expected_mm: float) -> None:
+    result = create_lithophane(_image_bytes((96, 42), "RGB"), size, tmp_path, f"{size}-square")
+    mesh = trimesh.load_mesh(result.stl_path)
+
+    assert result.metadata.width_mm == expected_mm
+    assert result.metadata.height_mm == expected_mm
+    assert pytest.approx(mesh.extents[0], abs=0.25) == expected_mm
+    assert pytest.approx(mesh.extents[1], abs=0.25) == expected_mm
 
 
 def test_invalid_image_raises(tmp_path: Path) -> None:

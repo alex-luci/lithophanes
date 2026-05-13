@@ -19,6 +19,8 @@ import "./styles.css";
 type LampSize = "Mini" | "Classic" | "Gallery";
 type LightTone = "Warm" | "Soft white" | "Amber";
 type JobStatus = "idle" | "ready" | "uploading" | "queued" | "processing" | "complete" | "failed";
+type CropState = { zoom: number; panX: number; panY: number };
+type ImageSize = { width: number; height: number };
 
 type LithophaneJob = {
   jobId: string;
@@ -55,6 +57,9 @@ const lightTones: Array<{ label: LightTone; color: string }> = [
   { label: "Amber", color: "#f3a23a" },
 ];
 
+const DEFAULT_CROP: CropState = { zoom: 1, panX: 0, panY: 0 };
+const CROP_EXPORT_PIXELS = 1024;
+
 const gallery = [
   {
     title: "Wedding frame",
@@ -78,7 +83,10 @@ const gallery = [
 
 function App() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [cropImageSize, setCropImageSize] = useState<ImageSize | null>(null);
+  const [crop, setCrop] = useState<CropState>(DEFAULT_CROP);
   const [fileName, setFileName] = useState("");
   const [size, setSize] = useState<LampSize>("Classic");
   const [tone, setTone] = useState<LightTone>("Warm");
@@ -88,6 +96,8 @@ function App() {
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [jobError, setJobError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const cropFrameRef = useRef<HTMLDivElement>(null);
+  const cropDragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
 
   const selectedSize = sizes.find((item) => item.label === size) ?? sizes[1];
   const selectedTone = lightTones.find((item) => item.label === tone) ?? lightTones[0];
@@ -105,8 +115,16 @@ function App() {
 
     const reader = new FileReader();
     reader.onload = () => {
+      const imageUrl = String(reader.result);
+      const image = new Image();
+      image.onload = () => {
+        setCropImageSize({ width: image.naturalWidth, height: image.naturalHeight });
+      };
+      image.src = imageUrl;
       setSelectedFile(file);
-      setUploadedImage(String(reader.result));
+      setUploadedImage(imageUrl);
+      setPreviewImage(null);
+      setCrop(DEFAULT_CROP);
       setFileName(file.name);
       setJob(null);
       setJobError("");
@@ -125,6 +143,81 @@ function App() {
     readFile(event.dataTransfer.files?.[0]);
   }
 
+  function markPreviewDirty() {
+    if (!selectedFile) return;
+    setJob(null);
+    setPreviewImage(null);
+    setJobError("");
+    setJobStatus("ready");
+  }
+
+  function updateCrop(nextCrop: CropState) {
+    setCrop(limitCrop(nextCrop));
+    markPreviewDirty();
+  }
+
+  function handleCropPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (!cropImageSize) return;
+    cropDragRef.current = { x: event.clientX, y: event.clientY, panX: crop.panX, panY: crop.panY };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleCropPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = cropDragRef.current;
+    const frame = cropFrameRef.current;
+    if (!drag || !frame || !cropImageSize) return;
+
+    const cropBounds = getCropBounds(cropImageSize, crop.zoom);
+    const widthTravel = (cropBounds.maxOffsetX / cropBounds.sourceSide) * frame.clientWidth;
+    const heightTravel = (cropBounds.maxOffsetY / cropBounds.sourceSide) * frame.clientHeight;
+    const nextPanX = widthTravel > 0 ? drag.panX - (event.clientX - drag.x) / widthTravel : 0;
+    const nextPanY = heightTravel > 0 ? drag.panY - (event.clientY - drag.y) / heightTravel : 0;
+    updateCrop({ ...crop, panX: nextPanX, panY: nextPanY });
+  }
+
+  function handleCropPointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    cropDragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  async function buildCroppedImage() {
+    if (!uploadedImage || !cropImageSize) {
+      throw new Error("Could not prepare cropped photo.");
+    }
+
+    const source = await loadImage(uploadedImage);
+    const cropBounds = getCropBounds(cropImageSize, crop.zoom);
+    const centerX = cropImageSize.width / 2 + crop.panX * cropBounds.maxOffsetX;
+    const centerY = cropImageSize.height / 2 + crop.panY * cropBounds.maxOffsetY;
+    const sx = clamp(centerX - cropBounds.sourceSide / 2, 0, cropImageSize.width - cropBounds.sourceSide);
+    const sy = clamp(centerY - cropBounds.sourceSide / 2, 0, cropImageSize.height - cropBounds.sourceSide);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = CROP_EXPORT_PIXELS;
+    canvas.height = CROP_EXPORT_PIXELS;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not prepare cropped photo.");
+
+    context.drawImage(
+      source,
+      sx,
+      sy,
+      cropBounds.sourceSide,
+      cropBounds.sourceSide,
+      0,
+      0,
+      CROP_EXPORT_PIXELS,
+      CROP_EXPORT_PIXELS,
+    );
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Could not prepare cropped photo.");
+
+    return { blob, dataUrl: canvas.toDataURL("image/png") };
+  }
+
   async function createPreview() {
     if (!selectedFile) {
       setJobError("Choose a JPG or PNG photo first.");
@@ -137,9 +230,11 @@ function App() {
     setJobStatus("uploading");
 
     try {
+      const croppedImage = await buildCroppedImage();
       const formData = new FormData();
-      formData.append("image", selectedFile);
+      formData.append("image", croppedImage.blob, `${selectedFile.name.replace(/\.[^.]+$/, "")}-crop.png`);
       formData.append("size", size);
+      setPreviewImage(croppedImage.dataUrl);
 
       const response = await fetch("/api/lithophanes", {
         method: "POST",
@@ -190,6 +285,9 @@ function App() {
   function resetPhoto() {
     setSelectedFile(null);
     setUploadedImage(null);
+    setPreviewImage(null);
+    setCropImageSize(null);
+    setCrop(DEFAULT_CROP);
     setFileName("");
     setJob(null);
     setJobError("");
@@ -198,6 +296,7 @@ function App() {
   }
 
   const canCreatePreview = Boolean(selectedFile) && !["uploading", "queued", "processing"].includes(jobStatus);
+  const cropImageStyle = uploadedImage && cropImageSize ? getCropImageStyle(cropImageSize, crop) : undefined;
   const statusLabel =
     jobStatus === "uploading"
       ? "Uploading photo"
@@ -303,10 +402,20 @@ function App() {
 
             <div className="upload-preview">
               {job?.status === "complete" && job.glbUrl ? (
-                <LithophaneViewer glbUrl={job.glbUrl} imageUrl={uploadedImage} lightColor={selectedTone.color} />
+                <LithophaneViewer glbUrl={job.glbUrl} imageUrl={previewImage ?? uploadedImage} lightColor={selectedTone.color} />
               ) : uploadedImage ? (
                 <>
-                  <img src={uploadedImage} alt="Uploaded preview" />
+                  <div
+                    className="crop-frame"
+                    ref={cropFrameRef}
+                    onPointerDown={handleCropPointerDown}
+                    onPointerMove={handleCropPointerMove}
+                    onPointerUp={handleCropPointerUp}
+                    onPointerCancel={handleCropPointerUp}
+                  >
+                    <img className="crop-image" src={uploadedImage} alt="Uploaded preview" style={cropImageStyle} />
+                    <div className="crop-grid" aria-hidden="true" />
+                  </div>
                   <button
                     className="icon-button remove-photo"
                     type="button"
@@ -339,6 +448,19 @@ function App() {
                 Choose file
               </button>
             </div>
+            {uploadedImage && jobStatus !== "complete" ? (
+              <label className="zoom-control">
+                <span>Zoom</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="4"
+                  step="0.01"
+                  value={crop.zoom}
+                  onChange={(event) => updateCrop({ ...crop, zoom: Number(event.target.value) })}
+                />
+              </label>
+            ) : null}
             {jobError ? <p className="error-text">{jobError}</p> : null}
           </div>
 
@@ -359,7 +481,10 @@ function App() {
                     key={item.label}
                     type="button"
                     className={item.label === size ? "active" : ""}
-                    onClick={() => setSize(item.label)}
+                    onClick={() => {
+                      setSize(item.label);
+                      markPreviewDirty();
+                    }}
                   >
                     <span>{item.label}</span>
                     <small>{item.detail}</small>
@@ -471,6 +596,49 @@ function App() {
       </footer>
     </main>
   );
+}
+
+function limitCrop(crop: CropState): CropState {
+  return {
+    zoom: clamp(crop.zoom, 1, 4),
+    panX: clamp(crop.panX, -1, 1),
+    panY: clamp(crop.panY, -1, 1),
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getCropBounds(imageSize: ImageSize, zoom: number) {
+  const sourceSide = Math.min(imageSize.width, imageSize.height) / zoom;
+  return {
+    sourceSide,
+    maxOffsetX: Math.max(0, (imageSize.width - sourceSide) / 2),
+    maxOffsetY: Math.max(0, (imageSize.height - sourceSide) / 2),
+  };
+}
+
+function getCropImageStyle(imageSize: ImageSize, crop: CropState): React.CSSProperties {
+  const cropBounds = getCropBounds(imageSize, crop.zoom);
+  const centerOffsetX = crop.panX * cropBounds.maxOffsetX;
+  const centerOffsetY = crop.panY * cropBounds.maxOffsetY;
+
+  return {
+    width: `${(imageSize.width / cropBounds.sourceSide) * 100}%`,
+    height: `${(imageSize.height / cropBounds.sourceSide) * 100}%`,
+    left: `${50 - (centerOffsetX / cropBounds.sourceSide) * 100}%`,
+    top: `${50 - (centerOffsetY / cropBounds.sourceSide) * 100}%`,
+  };
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Could not read uploaded photo."));
+    image.src = src;
+  });
 }
 
 createRoot(document.getElementById("root")!).render(

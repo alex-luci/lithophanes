@@ -87,10 +87,11 @@ def _image_to_heightmap(image: Image.Image, max_dimension_mm: float) -> tuple[np
     if width_px <= 0 or height_px <= 0:
         raise InvalidImageError("Image has no pixels")
 
-    scale = MAX_PIXELS / max(width_px, height_px)
-    resized_width = max(2, int(round(width_px * scale)))
-    resized_height = max(2, int(round(height_px * scale)))
-    resized = image.resize((resized_width, resized_height), Image.Resampling.LANCZOS)
+    side_px = min(width_px, height_px)
+    left = (width_px - side_px) // 2
+    top = (height_px - side_px) // 2
+    square = image.crop((left, top, left + side_px, top + side_px))
+    resized = square.resize((MAX_PIXELS, MAX_PIXELS), Image.Resampling.LANCZOS)
 
     pixels = np.flipud(np.asarray(resized, dtype=np.float32) / 255.0)
     low = float(pixels.min())
@@ -102,15 +103,7 @@ def _image_to_heightmap(image: Image.Image, max_dimension_mm: float) -> tuple[np
 
     thickness = MIN_THICKNESS_MM + (1.0 - pixels) * (MAX_THICKNESS_MM - MIN_THICKNESS_MM)
 
-    aspect = width_px / height_px
-    if width_px >= height_px:
-        width_mm = max_dimension_mm
-        height_mm = max_dimension_mm / aspect
-    else:
-        height_mm = max_dimension_mm
-        width_mm = max_dimension_mm * aspect
-
-    return thickness, width_mm, height_mm
+    return thickness, max_dimension_mm, max_dimension_mm
 
 
 def _heightmap_to_mesh(thickness: np.ndarray, width_mm: float, height_mm: float) -> trimesh.Trimesh:

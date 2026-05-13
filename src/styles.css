@@ -383,6 +383,48 @@ h2 {
   object-fit: cover;
 }
 
+.crop-frame {
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 430px);
+  aspect-ratio: 1;
+  background: #202322;
+  border-radius: var(--radius);
+  cursor: grab;
+  touch-action: none;
+}
+
+.crop-frame:active {
+  cursor: grabbing;
+}
+
+.crop-image {
+  position: absolute;
+  max-width: none;
+  object-fit: fill;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  pointer-events: none;
+}
+
+.crop-grid {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(32, 35, 34, 0.34);
+  pointer-events: none;
+}
+
+.crop-grid::before,
+.crop-grid::after {
+  position: absolute;
+  content: "";
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 33.2%, rgba(255, 255, 255, 0.42) 33.2% 33.8%, transparent 33.8% 66.2%, rgba(255, 255, 255, 0.42) 66.2% 66.8%, transparent 66.8%),
+    linear-gradient(180deg, transparent 33.2%, rgba(255, 255, 255, 0.42) 33.2% 33.8%, transparent 33.8% 66.2%, rgba(255, 255, 255, 0.42) 66.2% 66.8%, transparent 66.8%);
+}
+
 .model-viewer-wrap {
   position: relative;
   overflow: hidden;
@@ -493,6 +535,20 @@ h2 {
 .gallery-card p {
   color: var(--muted);
   line-height: 1.55;
+}
+
+.zoom-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.zoom-control input {
+  width: 100%;
+  accent-color: var(--coral);
 }
 
 .error-text {
