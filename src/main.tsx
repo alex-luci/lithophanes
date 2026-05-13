@@ -19,7 +19,7 @@ import {
 import { LithophaneViewer } from "./LithophaneViewer";
 import "./styles.css";
 
-type LampSize = "Mini" | "Classic" | "Gallery";
+type LampSize = "Small" | "Medium" | "Large";
 type LightTone = "Warm" | "Soft white" | "Amber";
 type Orientation = "Portrait" | "Landscape" | "Square";
 type JobStatus = "idle" | "ready" | "uploading" | "queued" | "processing" | "complete" | "failed";
@@ -44,14 +44,14 @@ type LithophaneJob = {
 };
 
 const sizes: Array<{ label: LampSize; price: number; detail: string }> = [
-  { label: "Mini", price: 199, detail: "10 cm" },
-  { label: "Classic", price: 299, detail: "15 cm" },
-  { label: "Gallery", price: 429, detail: "20 cm" },
+  { label: "Small", price: 199, detail: "10 x 10 cm" },
+  { label: "Medium", price: 299, detail: "15 x 15 cm" },
+  { label: "Large", price: 429, detail: "20 x 20 cm" },
 ];
 
 const orientations: Array<{ label: Orientation; detail: string }> = [
-  { label: "Portrait", detail: "9:16" },
-  { label: "Landscape", detail: "16:9" },
+  { label: "Portrait", detail: "3:4" },
+  { label: "Landscape", detail: "4:3" },
   { label: "Square", detail: "1:1" },
 ];
 
@@ -121,7 +121,7 @@ function App() {
   const [cropImageSize, setCropImageSize] = useState<ImageSize | null>(null);
   const [crop, setCrop] = useState<CropState>(DEFAULT_CROP);
   const [fileName, setFileName] = useState("");
-  const [size, setSize] = useState<LampSize>("Classic");
+  const [size, setSize] = useState<LampSize>("Medium");
   const [orientation, setOrientation] = useState<Orientation>("Square");
   const [tone, setTone] = useState<LightTone>("Warm");
   const [quantity, setQuantity] = useState(1);
@@ -556,7 +556,7 @@ function App() {
                     }}
                   >
                     <span>{item.label}</span>
-                    <small>{item.detail}</small>
+                    <small>{getSizeDetail(item.label, orientation)}</small>
                   </button>
                 ))}
               </div>
@@ -700,15 +700,37 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+function getSizeDetail(size: LampSize, orientation: Orientation) {
+  const squareCm: Record<LampSize, string> = {
+    Small: "10 x 10 cm",
+    Medium: "15 x 15 cm",
+    Large: "20 x 20 cm",
+  };
+  const portraitCm: Record<LampSize, string> = {
+    Small: "8.7 x 11.6 cm",
+    Medium: "13 x 17.3 cm",
+    Large: "17.3 x 23.1 cm",
+  };
+  const landscapeCm: Record<LampSize, string> = {
+    Small: "11.6 x 8.7 cm",
+    Medium: "17.3 x 13 cm",
+    Large: "23.1 x 17.3 cm",
+  };
+
+  if (orientation === "Portrait") return portraitCm[size];
+  if (orientation === "Landscape") return landscapeCm[size];
+  return squareCm[size];
+}
+
 function getOrientationAspect(orientation: Orientation) {
-  if (orientation === "Portrait") return 9 / 16;
-  if (orientation === "Landscape") return 16 / 9;
+  if (orientation === "Portrait") return 3 / 4;
+  if (orientation === "Landscape") return 4 / 3;
   return 1;
 }
 
 function getExportSize(orientation: Orientation) {
-  if (orientation === "Portrait") return { width: 900, height: CROP_EXPORT_MAX_PIXELS };
-  if (orientation === "Landscape") return { width: CROP_EXPORT_MAX_PIXELS, height: 900 };
+  if (orientation === "Portrait") return { width: 1200, height: CROP_EXPORT_MAX_PIXELS };
+  if (orientation === "Landscape") return { width: CROP_EXPORT_MAX_PIXELS, height: 1200 };
   return { width: 1200, height: 1200 };
 }
 
@@ -730,8 +752,8 @@ function getCropBounds(imageSize: ImageSize, zoom: number, orientation: Orientat
 
 function getCropFrameStyle(orientation: Orientation): React.CSSProperties {
   return {
-    aspectRatio: orientation === "Portrait" ? "9 / 16" : orientation === "Landscape" ? "16 / 9" : "1",
-    width: orientation === "Portrait" ? "min(100%, 270px)" : "min(100%, 430px)",
+    aspectRatio: orientation === "Portrait" ? "3 / 4" : orientation === "Landscape" ? "4 / 3" : "1",
+    width: orientation === "Portrait" ? "min(100%, 330px)" : "min(100%, 430px)",
   };
 }
 

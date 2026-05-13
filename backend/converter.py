@@ -9,13 +9,19 @@ import numpy as np
 import trimesh
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-LampSize = Literal["Mini", "Classic", "Gallery"]
+LampSize = Literal["Small", "Medium", "Large"]
 LithophaneOrientation = Literal["Portrait", "Landscape", "Square"]
 
-SIZE_CONFIG: dict[LampSize, float] = {
-    "Mini": 100.0,
-    "Classic": 150.0,
-    "Gallery": 200.0,
+SQUARE_SIZE_MM: dict[LampSize, float] = {
+    "Small": 100.0,
+    "Medium": 150.0,
+    "Large": 200.0,
+}
+
+RECTANGLE_SIZE_MM: dict[LampSize, tuple[float, float]] = {
+    "Small": (87.0, 116.0),
+    "Medium": (130.0, 173.0),
+    "Large": (173.0, 231.0),
 }
 
 MIN_THICKNESS_MM = 0.8
@@ -52,12 +58,12 @@ def create_lithophane(
     stem: str,
     orientation: LithophaneOrientation = "Square",
 ) -> LithophaneResult:
-    if size not in SIZE_CONFIG:
+    if size not in SQUARE_SIZE_MM:
         raise ValueError(f"Unknown size: {size}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     image = _load_grayscale(image_bytes)
-    width_mm, height_mm = _target_dimensions(SIZE_CONFIG[size], orientation)
+    width_mm, height_mm = _target_dimensions(size, orientation)
     heightmap = _image_to_heightmap(image, width_mm, height_mm)
     mesh = _heightmap_to_mesh(heightmap, width_mm, height_mm)
 
@@ -90,12 +96,14 @@ def _load_grayscale(image_bytes: bytes) -> Image.Image:
         raise InvalidImageError("Could not read image") from exc
 
 
-def _target_dimensions(selected_size_mm: float, orientation: LithophaneOrientation) -> tuple[float, float]:
+def _target_dimensions(size: LampSize, orientation: LithophaneOrientation) -> tuple[float, float]:
     if orientation == "Portrait":
-        return selected_size_mm * 9.0 / 16.0, selected_size_mm
+        return RECTANGLE_SIZE_MM[size]
     if orientation == "Landscape":
-        return selected_size_mm, selected_size_mm * 9.0 / 16.0
+        width_mm, height_mm = RECTANGLE_SIZE_MM[size]
+        return height_mm, width_mm
     if orientation == "Square":
+        selected_size_mm = SQUARE_SIZE_MM[size]
         return selected_size_mm, selected_size_mm
     raise ValueError(f"Unknown orientation: {orientation}")
 

@@ -12,7 +12,7 @@ def test_rejects_invalid_file_type() -> None:
     client = TestClient(app)
     response = client.post(
         "/api/lithophanes",
-        data={"size": "Mini"},
+        data={"size": "Small"},
         files={"image": ("bad.txt", b"hello", "text/plain")},
     )
 
@@ -24,7 +24,7 @@ def test_valid_upload_creates_complete_job() -> None:
     client = TestClient(app)
     response = client.post(
         "/api/lithophanes",
-        data={"size": "Mini", "orientation": "Landscape"},
+        data={"size": "Small", "orientation": "Landscape"},
         files={"image": ("photo.png", _png_bytes(), "image/png")},
     )
 
@@ -37,8 +37,8 @@ def test_valid_upload_creates_complete_job() -> None:
     assert payload["stlUrl"].endswith(".stl")
     assert payload["glbUrl"].endswith(".glb")
     assert payload["metadata"]["is_watertight"] is True
-    assert payload["metadata"]["width_mm"] == 100.0
-    assert payload["metadata"]["height_mm"] == 56.25
+    assert payload["metadata"]["width_mm"] == 116.0
+    assert payload["metadata"]["height_mm"] == 87.0
 
 
 def _png_bytes() -> bytes:
