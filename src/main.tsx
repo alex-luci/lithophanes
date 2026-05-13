@@ -3,14 +3,12 @@ import { createRoot } from "react-dom/client";
 import {
   ArrowUp,
   BadgeCheck,
-  Check,
   ClipboardList,
   Gift,
   ImagePlus,
   LampDesk,
   Minus,
   Plus,
-  ShieldCheck,
   Sparkles,
   Upload,
   Wand2,
@@ -362,10 +360,10 @@ function App() {
 
       <section className="hero" id="top" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="eyebrow">Photo-built light keepsakes</p>
+          <p className="eyebrow">TURN MEMORIES INTO LIGHT</p>
           <h1 id="hero-title">LumaRelief</h1>
           <p className="hero-text">
-            Custom 3D printed lithophane lamps with a fitted case, warm LED core, and photo-to-light preview.
+            Photo-built lithophane lamps designed to softly illuminate your favorite moments.
           </p>
           <div className="hero-actions">
             <a className="primary-button" href="#upload">
@@ -375,16 +373,6 @@ function App() {
             <a className="ghost-button" href="#gallery">
               View lamps
             </a>
-          </div>
-          <div className="trust-row" aria-label="Order highlights">
-            <span>
-              <ShieldCheck size={16} aria-hidden="true" />
-              2 day proof
-            </span>
-            <span>
-              <Check size={16} aria-hidden="true" />
-              USB-C light base
-            </span>
           </div>
         </div>
 
