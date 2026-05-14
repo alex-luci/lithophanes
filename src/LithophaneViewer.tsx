@@ -16,7 +16,12 @@ type LithophaneViewerProps = {
 
 const DEFAULT_ROTATION = { x: -0.08, y: -0.18 };
 const CASE_FRAME_MARGIN_MM = 3;
-const CASE_PANEL_GAP_MM = 0.12;
+const CASE_PANEL_GAP_MM = -22;
+const MEDIUM_PANEL_MAX_MM: Record<LithophaneViewerProps["orientation"], number> = {
+  Portrait: 173,
+  Landscape: 173,
+  Square: 150,
+};
 
 export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientation }: LithophaneViewerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -163,6 +168,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
 
       const lithophaneBackZ = -boxSize.z / 2;
       const lightPanelDepth = Math.min(1.8, Math.max(0.7, maxDim * 0.01));
+      const frontLipZ = lithophaneBackZ - CASE_PANEL_GAP_MM;
       const backlightMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(lightColorRef.current),
         opacity: 0,
@@ -194,7 +200,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
           return;
         }
 
-        fitCaseGeometryToPanel(geometry, boxSize, orientation);
+        fitCaseGeometryToPanel(geometry, boxSize, orientation, camera.position.z, frontLipZ);
 
         const caseMesh = new THREE.Mesh(geometry, caseMaterial);
         caseMesh.name = "case-cover";
@@ -203,7 +209,6 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
         const caseCenter = caseBox.getCenter(new THREE.Vector3());
         caseMesh.position.x -= caseCenter.x;
         caseMesh.position.y -= caseCenter.y;
-        const frontLipZ = lithophaneBackZ - CASE_PANEL_GAP_MM;
         caseMesh.position.z = frontLipZ - caseBox.max.z;
         caseMesh.renderOrder = -2;
         modelRoot.add(caseMesh);
@@ -264,6 +269,8 @@ function fitCaseGeometryToPanel(
   geometry: THREE.BufferGeometry,
   panelSize: THREE.Vector3,
   orientation: LithophaneViewerProps["orientation"],
+  cameraZ: number,
+  frontLipZ: number,
 ) {
   if (orientation === "Portrait") {
     geometry.rotateZ(Math.PI / 2);
@@ -274,11 +281,23 @@ function fitCaseGeometryToPanel(
   if (!box) return;
 
   const caseSize = box.getSize(new THREE.Vector3());
-  const targetWidth = panelSize.x + CASE_FRAME_MARGIN_MM * 2;
-  const targetHeight = panelSize.y + CASE_FRAME_MARGIN_MM * 2;
+  const perspectiveCompensation = getPerspectiveCompensation(cameraZ, frontLipZ, orientation);
+  const targetWidth = (panelSize.x + CASE_FRAME_MARGIN_MM * 2) * perspectiveCompensation;
+  const targetHeight = (panelSize.y + CASE_FRAME_MARGIN_MM * 2) * perspectiveCompensation;
   geometry.scale(targetWidth / caseSize.x, targetHeight / caseSize.y, 1);
   geometry.computeVertexNormals();
   geometry.computeBoundingBox();
+}
+
+function getPerspectiveCompensation(
+  cameraZ: number,
+  frontLipZ: number,
+  orientation: LithophaneViewerProps["orientation"],
+) {
+  const currentProjection = cameraZ / Math.max(0.001, cameraZ - frontLipZ);
+  const referenceCameraZ = MEDIUM_PANEL_MAX_MM[orientation] * 2.18;
+  const referenceProjection = referenceCameraZ / Math.max(0.001, referenceCameraZ - frontLipZ);
+  return referenceProjection / currentProjection;
 }
 
 function createLithophaneMaterial(
