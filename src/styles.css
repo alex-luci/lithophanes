@@ -70,16 +70,15 @@ img {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 0.94fr) minmax(420px, 1.06fr);
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+  gap: clamp(28px, 5vw, 86px);
   width: min(1180px, calc(100% - 32px));
   min-height: 72px;
   margin: 0 auto;
   padding: 12px 0;
   color: var(--ink);
-  backdrop-filter: blur(18px);
 }
 
 .brand {
@@ -105,7 +104,7 @@ img {
 .site-nav {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -119,10 +118,10 @@ img {
   background: rgba(255, 255, 255, 0.78);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  box-shadow: none;
   font-size: 0.92rem;
   font-weight: 800;
   transition:
-    transform 160ms ease,
     background 160ms ease,
     border-color 160ms ease;
 }
@@ -130,7 +129,6 @@ img {
 .site-nav a:hover {
   background: var(--white);
   border-color: rgba(32, 35, 34, 0.18);
-  transform: translateY(-1px);
 }
 
 .hero {
@@ -937,6 +935,7 @@ footer {
 
 @media (max-width: 680px) {
   .site-header {
+    display: flex;
     align-items: flex-start;
     flex-direction: column;
   }
