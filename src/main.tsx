@@ -358,6 +358,12 @@ function App() {
           </span>
           <span>LumaRelief</span>
         </a>
+        <nav className="site-nav" aria-label="Primary navigation">
+          <a href="#top">Home</a>
+          <a href="#story">Story</a>
+          <a href="#upload">Studio</a>
+          <a href="#gallery">Styles</a>
+        </nav>
       </header>
 
       <section className="hero" id="top" aria-labelledby="hero-title">
@@ -402,7 +408,7 @@ function App() {
         </div>
       </section>
 
-      <section className="story-section" aria-labelledby="story-title">
+      <section className="story-section" id="story" aria-labelledby="story-title">
         <div className="section-heading">
           <p className="eyebrow">Your memory, made luminous</p>
           <h2 id="story-title">Because every photo tells a story, let us help you tell yours</h2>
