@@ -791,25 +791,106 @@ output {
   position: relative;
   overflow: hidden;
   aspect-ratio: 5 / 4;
-  background: #eef0e8;
+  background: #202322;
+  isolation: isolate;
 }
 
 .gallery-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(0.22) contrast(1.04);
 }
 
-.gallery-image span {
+.gallery-lithophane {
+  filter: saturate(0.96) contrast(1.04);
+}
+
+.gallery-original-layer {
   position: absolute;
-  right: 14px;
-  bottom: 14px;
-  display: block;
-  width: 46px;
-  height: 46px;
-  border: 3px solid var(--white);
+  inset: 0;
+  overflow: hidden;
+  clip-path: inset(0 calc(100% - var(--reveal)) 0 0);
+  z-index: 1;
+}
+
+.gallery-original-layer img {
+  filter: contrast(1.03) saturate(1.03);
+}
+
+.gallery-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--reveal);
+  width: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 18px rgba(32, 35, 34, 0.32);
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.gallery-divider::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  content: "";
+  background: var(--white);
+  border: 1px solid rgba(32, 35, 34, 0.16);
   border-radius: 50%;
-  box-shadow: 0 8px 22px rgba(32, 35, 34, 0.22);
+  box-shadow: 0 10px 26px rgba(32, 35, 34, 0.28);
+  transform: translate(-50%, -50%);
+}
+
+.gallery-slider {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  width: calc(100% - 36px);
+  height: 24px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: ew-resize;
+  z-index: 3;
+}
+
+.gallery-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  box-shadow: 0 1px 8px rgba(32, 35, 34, 0.26);
+}
+
+.gallery-slider::-webkit-slider-thumb {
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  appearance: none;
+  background: var(--white);
+  border: 2px solid rgba(32, 35, 34, 0.24);
+  border-radius: 50%;
+  box-shadow: 0 8px 18px rgba(32, 35, 34, 0.28);
+}
+
+.gallery-slider::-moz-range-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  box-shadow: 0 1px 8px rgba(32, 35, 34, 0.26);
+}
+
+.gallery-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: var(--white);
+  border: 2px solid rgba(32, 35, 34, 0.24);
+  border-radius: 50%;
+  box-shadow: 0 8px 18px rgba(32, 35, 34, 0.28);
 }
 
 footer {

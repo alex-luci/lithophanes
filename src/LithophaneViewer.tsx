@@ -245,8 +245,8 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
 
 function getCaseUrl(size: LithophaneViewerProps["size"], orientation: LithophaneViewerProps["orientation"]) {
   const slug = size.toLowerCase();
-  if (orientation === "Square") return `/square_${slug}.stl`;
-  return `/landscape_portrait_${slug}.stl`;
+  if (orientation === "Square") return `/3d_case/square_${slug}.stl`;
+  return `/3d_case/landscape_portrait_${slug}.stl`;
 }
 
 function createLithophaneMaterial(

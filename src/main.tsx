@@ -71,21 +71,18 @@ const CROP_EXPORT_MAX_PIXELS = 1600;
 const gallery = [
   {
     title: "Wedding frame",
-    color: "#ef7d60",
-    image:
-      "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=80",
+    original: "/lithophane_vs_real/original-wedding-frame.avif",
+    lithophane: "/lithophane_vs_real/lithophane-wedding-frame.png",
   },
   {
     title: "Family portrait",
-    color: "#2d9c91",
-    image:
-      "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=80",
+    original: "/lithophane_vs_real/original-people-group.avif",
+    lithophane: "/lithophane_vs_real/lithophane-people-group.png",
   },
   {
     title: "Pet keepsake",
-    color: "#f1b34b",
-    image:
-      "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=900&q=80",
+    original: "/lithophane_vs_real/original-dog.avif",
+    lithophane: "/lithophane_vs_real/lithophane-dog.png",
   },
 ];
 
@@ -127,6 +124,11 @@ function App() {
   const [job, setJob] = useState<LithophaneJob | null>(null);
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [jobError, setJobError] = useState("");
+  const [galleryReveal, setGalleryReveal] = useState<Record<string, number>>({
+    "Wedding frame": 52,
+    "Family portrait": 52,
+    "Pet keepsake": 52,
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const cropFrameRef = useRef<HTMLDivElement>(null);
   const cropDragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
@@ -653,9 +655,26 @@ function App() {
         <div className="gallery-grid">
           {gallery.map((item) => (
             <article className="gallery-card" key={item.title}>
-              <div className="gallery-image">
-                <img src={item.image} alt={item.title} />
-                <span style={{ background: item.color }} />
+              <div className="gallery-image" style={{ "--reveal": `${galleryReveal[item.title]}%` } as React.CSSProperties}>
+                <img className="gallery-lithophane" src={item.lithophane} alt={`${item.title} lithophane lamp`} />
+                <div className="gallery-original-layer">
+                  <img src={item.original} alt={`${item.title} original photo`} />
+                </div>
+                <div className="gallery-divider" aria-hidden="true" />
+                <input
+                  className="gallery-slider"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={galleryReveal[item.title]}
+                  onChange={(event) =>
+                    setGalleryReveal((current) => ({
+                      ...current,
+                      [item.title]: Number(event.target.value),
+                    }))
+                  }
+                  aria-label={`${item.title} original and lithophane comparison`}
+                />
               </div>
               <div>
                 <h3>{item.title}</h3>
