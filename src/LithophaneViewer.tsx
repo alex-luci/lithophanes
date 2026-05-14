@@ -128,9 +128,13 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
     const loader = new GLTFLoader();
     const stlLoader = new STLLoader();
     loader.load(glbUrl, (gltf) => {
-      if (disposed) return;
+      if (disposed) {
+        disposeObject3D(gltf.scene);
+        return;
+      }
       materialsRef.current = [];
       backlightRef.current = null;
+      disposeObject3D(modelRoot);
       modelRoot.clear();
       modelRoot.add(gltf.scene);
 
@@ -222,6 +226,7 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
       mount.removeEventListener("pointerup", handlePointerUp);
       mount.removeEventListener("pointercancel", handlePointerUp);
       window.cancelAnimationFrame(frameId);
+      disposeObject3D(modelRoot);
       texture.dispose();
       composer.dispose();
       renderer.dispose();
@@ -244,6 +249,15 @@ function getCaseUrl(size: LithophaneViewerProps["size"], orientation: Lithophane
   const slug = size.toLowerCase();
   if (orientation === "Square") return `/3d_case/square_${slug}.stl`;
   return `/3d_case/landscape_portrait_${slug}.stl`;
+}
+
+function disposeObject3D(object: THREE.Object3D) {
+  object.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    child.geometry.dispose();
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach((material) => material.dispose());
+  });
 }
 
 function fitCaseGeometryToPanel(

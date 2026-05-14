@@ -144,6 +144,7 @@ function App() {
     "Family portrait": 52,
     "Pet keepsake": 52,
   });
+  const generationRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const cropFrameRef = useRef<HTMLDivElement>(null);
   const cropDragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
@@ -175,6 +176,7 @@ function App() {
       setPreviewImage(null);
       setCrop(DEFAULT_CROP);
       setFileName(file.name);
+      generationRef.current += 1;
       setJob(null);
       setJobError("");
       setJobStatus("ready");
@@ -194,6 +196,7 @@ function App() {
 
   function markPreviewDirty() {
     if (!selectedFile) return;
+    generationRef.current += 1;
     setJob(null);
     setPreviewImage(null);
     setJobError("");
@@ -276,6 +279,9 @@ function App() {
     }
 
     setJobError("");
+    setPreviewImage(null);
+    const generationId = generationRef.current + 1;
+    generationRef.current = generationId;
     setJob(null);
     setJobStatus("uploading");
 
@@ -298,23 +304,27 @@ function App() {
       }
 
       const queuedJob = (await response.json()) as LithophaneJob;
+      if (generationRef.current !== generationId) return;
       setJob(queuedJob);
       setJobStatus(queuedJob.status);
-      void pollJob(queuedJob.jobId);
+      void pollJob(queuedJob.jobId, generationId);
     } catch (error) {
+      if (generationRef.current !== generationId) return;
       setJobError(error instanceof Error ? error.message : "Could not create preview.");
       setJobStatus("failed");
     }
   }
 
-  async function pollJob(jobId: string) {
+  async function pollJob(jobId: string, generationId: number) {
     try {
       for (let attempt = 0; attempt < 90; attempt += 1) {
         await new Promise((resolve) => window.setTimeout(resolve, 900));
+        if (generationRef.current !== generationId) return;
         const response = await fetch(`/api/lithophanes/${jobId}`);
         if (!response.ok) throw new Error("Could not read preview status.");
 
         const nextJob = (await response.json()) as LithophaneJob;
+        if (generationRef.current !== generationId) return;
         setJob(nextJob);
         setJobStatus(nextJob.status);
 
@@ -328,12 +338,14 @@ function App() {
       setJobStatus("failed");
       setJobError("Generation timed out. Try a smaller photo.");
     } catch (error) {
+      if (generationRef.current !== generationId) return;
       setJobStatus("failed");
       setJobError(error instanceof Error ? error.message : "Could not read preview status.");
     }
   }
 
   function resetPhoto() {
+    generationRef.current += 1;
     setSelectedFile(null);
     setUploadedImage(null);
     setPreviewImage(null);
@@ -483,6 +495,7 @@ function App() {
             <div className="upload-preview">
               {job?.status === "complete" && job.glbUrl ? (
                 <LithophaneViewer
+                  key={`${generationRef.current}-${job.jobId}`}
                   glbUrl={job.glbUrl}
                   imageUrl={previewImage ?? uploadedImage}
                   lightColor={selectedTone.color}
