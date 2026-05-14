@@ -39,12 +39,12 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
     if (!mount) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#d8d2c4");
+    scene.background = new THREE.Color("#e5dccf");
 
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 10000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor("#d8d2c4", 1);
+    renderer.setClearColor("#e5dccf", 1);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.92;
@@ -56,8 +56,8 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
 
-    scene.add(new THREE.HemisphereLight("#fff0d0", "#121412", 1.15));
-    const keyLight = new THREE.DirectionalLight("#fff8e8", 1.7);
+    scene.add(new THREE.HemisphereLight("#fff1d4", "#18140f", 1.05));
+    const keyLight = new THREE.DirectionalLight("#fff7e8", 1.55);
     keyLight.position.set(0.35, 0.55, 1.2);
     scene.add(keyLight);
 
@@ -176,9 +176,9 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
       backlightRef.current = backlightMaterial;
 
       const caseMaterial = new THREE.MeshStandardMaterial({
-        color: "#151715",
-        roughness: 0.82,
-        metalness: 0.18,
+        color: "#201f1b",
+        roughness: 0.9,
+        metalness: 0.12,
         side: THREE.DoubleSide,
       });
 
