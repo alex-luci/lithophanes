@@ -16,9 +16,9 @@ type LithophaneViewerProps = {
 
 const DEFAULT_ROTATION = { x: -0.08, y: -0.18 };
 const CASE_FRAME_MARGIN_MM = 3;
-const CASE_PANEL_GAP_SMALL_MM = -22;
+const CASE_PANEL_GAP_SMALL_MM = -15;
 const CASE_PANEL_GAP_MEDIUM_MM = -22;
-const CASE_PANEL_GAP_LARGE_MM = -22;
+const CASE_PANEL_GAP_LARGE_MM = -30;
 
 export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientation }: LithophaneViewerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
