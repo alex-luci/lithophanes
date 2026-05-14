@@ -15,6 +15,8 @@ type LithophaneViewerProps = {
 };
 
 const DEFAULT_ROTATION = { x: -0.08, y: -0.18 };
+const CASE_FRAME_MARGIN_MM = 3;
+const CASE_PANEL_GAP_MM = 0.12;
 
 export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientation }: LithophaneViewerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -157,7 +159,6 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
 
       const lithophaneBackZ = -boxSize.z / 2;
       const lightPanelDepth = Math.min(1.8, Math.max(0.7, maxDim * 0.01));
-      const lightPanelBackZ = lithophaneBackZ - lightPanelDepth - 0.45;
       const backlightMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(lightColorRef.current),
         opacity: 0,
@@ -189,20 +190,16 @@ export function LithophaneViewer({ glbUrl, imageUrl, lightColor, size, orientati
           return;
         }
 
-        geometry.computeVertexNormals();
-        geometry.computeBoundingBox();
+        fitCaseGeometryToPanel(geometry, boxSize, orientation);
 
         const caseMesh = new THREE.Mesh(geometry, caseMaterial);
         caseMesh.name = "case-cover";
-        if (orientation === "Portrait") {
-          caseMesh.rotation.z = Math.PI / 2;
-        }
 
         const caseBox = new THREE.Box3().setFromObject(caseMesh);
         const caseCenter = caseBox.getCenter(new THREE.Vector3());
         caseMesh.position.x -= caseCenter.x;
         caseMesh.position.y -= caseCenter.y;
-        const frontLipZ = lightPanelBackZ + 25;
+        const frontLipZ = lithophaneBackZ - CASE_PANEL_GAP_MM;
         caseMesh.position.z = frontLipZ - caseBox.max.z;
         caseMesh.renderOrder = -2;
         modelRoot.add(caseMesh);
@@ -247,6 +244,27 @@ function getCaseUrl(size: LithophaneViewerProps["size"], orientation: Lithophane
   const slug = size.toLowerCase();
   if (orientation === "Square") return `/3d_case/square_${slug}.stl`;
   return `/3d_case/landscape_portrait_${slug}.stl`;
+}
+
+function fitCaseGeometryToPanel(
+  geometry: THREE.BufferGeometry,
+  panelSize: THREE.Vector3,
+  orientation: LithophaneViewerProps["orientation"],
+) {
+  if (orientation === "Portrait") {
+    geometry.rotateZ(Math.PI / 2);
+  }
+
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+  if (!box) return;
+
+  const caseSize = box.getSize(new THREE.Vector3());
+  const targetWidth = panelSize.x + CASE_FRAME_MARGIN_MM * 2;
+  const targetHeight = panelSize.y + CASE_FRAME_MARGIN_MM * 2;
+  geometry.scale(targetWidth / caseSize.x, targetHeight / caseSize.y, 1);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
 }
 
 function createLithophaneMaterial(
