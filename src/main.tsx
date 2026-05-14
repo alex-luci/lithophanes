@@ -68,7 +68,7 @@ const lightTones: Array<{ label: LightTone; color: string }> = [
 const DEFAULT_CROP: CropState = { zoom: 1, panX: 0, panY: 0 };
 const CROP_EXPORT_MAX_PIXELS = 1600;
 
-const gallery = [
+const momentComparisons = [
   {
     title: "Wedding frame",
     original: "/lithophane_vs_real/original-wedding-frame.avif",
@@ -83,6 +83,21 @@ const gallery = [
     title: "Pet keepsake",
     original: "/lithophane_vs_real/original-dog.avif",
     lithophane: "/lithophane_vs_real/lithophane-dog.png",
+  },
+];
+
+const customerGallery = [
+  {
+    title: "Desk glow",
+    image: "/lithophane_gallery/3D_printed_lithophane%20(1).webp",
+  },
+  {
+    title: "Warm memory",
+    image: "/lithophane_gallery/Copy-of-Copy-of-Copy-of-product-creatives-insta-3-3.jpg",
+  },
+  {
+    title: "Printed keepsake",
+    image: "/lithophane_gallery/Shawn-Sadler-0.8-2.0-1-e1668627948762.jpg",
   },
 ];
 
@@ -362,7 +377,8 @@ function App() {
           <a href="#top">Home</a>
           <a href="#story">Story</a>
           <a href="#upload">Studio</a>
-          <a href="#gallery">Styles</a>
+          <a href="#moments">Moments</a>
+          <a href="#gallery">Gallery</a>
         </nav>
       </header>
 
@@ -653,13 +669,13 @@ function App() {
         </div>
       </section>
 
-      <section className="gallery-section" id="gallery" aria-labelledby="gallery-title">
+      <section className="gallery-section" id="moments" aria-labelledby="moments-title">
         <div className="section-heading">
-          <p className="eyebrow">Lamp styles</p>
-          <h2 id="gallery-title">Made from moments</h2>
+          <p className="eyebrow">Moments</p>
+          <h2 id="moments-title">Made from moments</h2>
         </div>
         <div className="gallery-grid">
-          {gallery.map((item) => (
+          {momentComparisons.map((item) => (
             <article className="gallery-card" key={item.title}>
               <div className="gallery-image" style={{ "--reveal": `${galleryReveal[item.title]}%` } as React.CSSProperties}>
                 <img className="gallery-lithophane" src={item.lithophane} alt={`${item.title} lithophane lamp`} />
@@ -686,6 +702,23 @@ function App() {
                 <h3>{item.title}</h3>
                 <p>Curved lithophane panel, fitted acrylic case, dimmable light.</p>
               </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="gallery-section" id="gallery" aria-labelledby="gallery-title">
+        <div className="section-heading">
+          <p className="eyebrow">Gallery</p>
+          <h2 id="gallery-title">Customer lithophanes</h2>
+        </div>
+        <div className="customer-gallery-grid">
+          {customerGallery.map((item) => (
+            <article className="customer-gallery-card" key={item.title}>
+              <div className="customer-gallery-image">
+                <img src={item.image} alt={item.title} />
+              </div>
+              <h3>{item.title}</h3>
             </article>
           ))}
         </div>

@@ -610,7 +610,8 @@ h2 {
 
 .upload-copy h3,
 .panel-header h3,
-.gallery-card h3 {
+.gallery-card h3,
+.customer-gallery-card h3 {
   margin-bottom: 8px;
   font-size: 1.38rem;
   line-height: 1.16;
@@ -887,6 +888,36 @@ output {
   z-index: 3;
 }
 
+.customer-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.customer-gallery-card {
+  overflow: hidden;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.customer-gallery-card h3 {
+  padding: 18px;
+}
+
+.customer-gallery-image {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #eef0e8;
+}
+
+.customer-gallery-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 footer {
   display: flex;
   align-items: center;
@@ -924,7 +955,8 @@ footer {
     min-height: 560px;
   }
 
-  .gallery-grid {
+  .gallery-grid,
+  .customer-gallery-grid {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -994,6 +1026,7 @@ footer {
   }
 
   .gallery-grid,
+  .customer-gallery-grid,
   .swatch-row,
   .segmented-control {
     grid-template-columns: 1fr;
